@@ -1,4 +1,4 @@
-//importing and instantiating express server
+// SECTION 1 importing and instantiating express server
 const express = require('express');
 const app = express();
 
@@ -10,25 +10,52 @@ let ADMINS = [];
 let USERS = [];
 let COURSES = [];
 
-//custom authentication middleware function
-const adminAuthentication = (req,res, next) => {
-    const {username, password} = req.headers;
-    const admin = ADMINS.find(a => a.username === username && a.password === password);
-    if(admin){
-        next();
+// SECTION 2 authentication using jwt
+const secret = "1212";
+
+//admin authentication
+const adminGenerateJwt = (user) => {
+    const payload = {username: user.username};
+    return generateJwt.sign(payload, secret, {expiresIn: '1h'});
+}
+
+const adminAuthenticateJwt = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if(authHeader) {
+        const token = authHeader.split(' ')[1];
+        generateJwt.verify(token, secret, (err,user) => {
+            if(err) {
+                return res.sendStatus(403);
+            } else {
+                req.user = user;
+                next();
+            }
+        });
     } else {
-        res.status(403).json({message: 'Admin authentication failed'});
+        res.sendStatus(401);
     }
 }
 
-const userAuthentication = (req, res, next) => {
-    const { username, password } = req.headers;
-    const user = USERS.find(u => u.username === username && u.password === password);
-    if (user) {
-        req.user = user; //adding user object to the payload
-        next();
+//user authentication
+const userGenerateJwt = (user) => {
+    const payload = {username: user.username};
+    return generateJwt.sign(payload, secret, {expiresIn: '1h'});
+}
+
+const userAuthenticateJwt = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if(authHeader) {
+        const token = authHeader.split(' ')[1];
+        generateJwt.verify(token, secret, (err,user) => {
+            if(err) {
+                return res.sendStatus(403);
+            } else {
+                req.user = user;
+                next();
+            }
+        });
     } else {
-        res.status(403).json({ message: 'User authentication failed'});
+        res.sendStatus(401);
     }
 }
 
